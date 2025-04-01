@@ -26,6 +26,11 @@ my_flights <- flights ## getting a copy of the data in the environment
 1. Use functions to inspect it: how many rows and columns does it have? What are the names of the columns? Hint: Use `??flights` to search for documentation on the data set (for what the columns contain)
 
 ```{r}
+dim(my_flights)
+nrow(my_flights)
+ncol(my_flights)
+
+colnames(my_flights)
 
 ```
 
@@ -33,7 +38,7 @@ my_flights <- flights ## getting a copy of the data in the environment
 2. Use `dplyr` to give the data frame a new column that is the amount of time gained or lost while flying (that is: how much of the delay arriving occurred during flight, as opposed to before departing).
 
 ```{r}
-
+my_flights <- mutate(my_flights, time_lost = arr_delay - dep_delay)
 ```
 
 
@@ -41,26 +46,26 @@ my_flights <- flights ## getting a copy of the data in the environment
 3. Use `dplyr` to sort your data frame in descending order by the column you just created. Remember to save this as a variable (or in the same one!)
 
 ```{r}
-
+my_flights <- arrange(my_flights, -time_lost)
 ```
 
 4. If you haven't already, do the last 2 steps in a single statement using the pipe operator. 
 
 ```{r}
-
+my_flights <- my_flights %>% mutate(time_lost = arr_delay - dep_delay) %>% arrange(-time_lost)
 ```
 
 5. Make a histogram of the amount of time gained using the `hist()` function
 
 ```{r}
-
+hist(my_flights$time_lost)
 ```
 
 
 6. On average, did flights gain or lose time? Note: use the `na.rm = TRUE` argument to remove NA values from your aggregation
 
 ```{r}
-
+my_flights %>% summarise(mean(time_lost, na.rm = T))
 
 ```
 
@@ -68,15 +73,15 @@ my_flights <- flights ## getting a copy of the data in the environment
 7. Create a data.frame of flights with a destination of Hobby Airport (Airport code 'HOU'), only including the origin, destination, and the "made_up_time" column you just created
 
 ```{r}
-
+houston_flights <- my_flights %>% filter(dest == "HOU") %>% select(origin, dest, time_lost)
 ```
 
 
-8. On average, did flights to SeaTac gain or lose time?
+8. On average, did flights to Houston gain or lose time?
 
 
 ```{r}
-
+houston_flights %>% summarise(mean(time_lost, na.rm = T))
 
 ```
 
@@ -88,6 +93,20 @@ Go back to our flights exercise data. Consider flights from JFK to SEA. What was
 
 ```{r}
 
+my_flights %>% 
+  na.omit(air_time) %>% 
+  filter(dest == "SEA", origin == "JFK") %>% 
+  summarise(mean_at = mean(air_time), 
+            min_at = min(air_time), 
+            max_at = max(air_time))
+                                      
+## OR 
+
+my_flights %>%  
+  filter(dest == "SEA", origin == "JFK") %>% 
+  summarise(mean_at = mean(air_time, na.rm = T), 
+            min_at = min(air_time, na.rm = T), 
+            max_at = max(air_time, na.rm = T))                                                    
 
 ```
 
@@ -95,6 +114,7 @@ Consider flights coming into Houston (HOU and IAH). What is the mean arrival del
 
 ```{r}
 
+my_flights %>% na.omit(arr_delay) %>%  filter(dest == "HOU" | dest == "IAH") %>% group_by(origin) %>% summarise(mean_arrdelay = mean(arr_delay))
 
 ```
 
@@ -102,6 +122,7 @@ Getting ready for next class: Create a list of all the different values for the 
 
 ```{r}
 
+sort(unique(my_flights$dest))
 
 ```
 
@@ -134,6 +155,7 @@ Now, change this to see the same plot for the Droids.
 
 ```{r}
 
+starwars %>% filter(species == "Droid") %>% plot(mass ~ height, data = .)
 
 ```
 
@@ -142,6 +164,7 @@ How many characters are from each planet?
 
 ```{r}
 
+starwars %>% count(homeworld)
 
 
 ```
@@ -149,13 +172,13 @@ How many characters are from each planet?
 If you wanted to arrange this in descending order, what would you add to the pipe? 
 
 ```{r}
-
+ starwars %>% count(homeworld) %>% arrange(-n)
 ```
 
 Find the average height for each eye color. You might find some of the answers to be strange, but keep going! 
 
 ```{r}
-
+starwars %>% group_by(eye_color) %>% summarise(avg_height_per_color = mean(height))
 
 ```
 
@@ -164,13 +187,17 @@ So.... What's with the NAs? Filter down to just brown eyes find out what's going
 
 ```{r}
 
-
+starwars %>% filter(eye_color == "brown")
 ```
 
 Okay, so we have missing data here. Try summarising with `na.omit(height)` instead of just `height` or adding `na.rm = T` to the mean function inside summarize. 
 
 
 ```{r}
+starwars %>% 
+  na.omit(height) %>% 
+  group_by(eye_color) %>% 
+  summarise(avg_height_per_color = mean(height))
 
 
 ```
